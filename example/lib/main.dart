@@ -26,10 +26,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   // Holds the text that user typed.
-  String text = '';
-
-  // True if shift enabled.
-  bool shiftEnabled = false;
+  TextEditingController controller = TextEditingController(text: '...');
 
   // is true will show the numeric keyboard.
   bool isNumericMode = true;
@@ -43,9 +40,8 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Center(
         child: Column(
           children: <Widget>[
-            Text(
-              text,
-              style: Theme.of(context).textTheme.display1,
+            TextField(
+              controller: controller,
             ),
             SwitchListTile(
               title: Text(
@@ -67,42 +63,16 @@ class _MyHomePageState extends State<MyHomePage> {
             Container(
               color: Colors.deepPurple,
               child: VirtualKeyboard(
-                  height: 300,
-                  textColor: Colors.white,
-                  type: isNumericMode
-                      ? VirtualKeyboardType.Numeric
-                      : VirtualKeyboardType.Alphanumeric,
-                  onKeyPress: _onKeyPress),
+                height: 300,
+                textColor: Colors.white,
+                type: isNumericMode
+                    ? VirtualKeyboardType.Numeric
+                    : VirtualKeyboardType.Alphanumeric,
+              ),
             )
           ],
         ),
       ),
     );
-  }
-
-  /// Fired when the virtual keyboard key is pressed.
-  _onKeyPress(VirtualKeyboardKey key) {
-    if (key.keyType == VirtualKeyboardKeyType.String) {
-      text = text + (shiftEnabled ? key.capsText : key.text);
-    } else if (key.keyType == VirtualKeyboardKeyType.Action) {
-      switch (key.action) {
-        case VirtualKeyboardKeyAction.Backspace:
-          if (text.length == 0) return;
-          text = text.substring(0, text.length - 1);
-          break;
-        case VirtualKeyboardKeyAction.Return:
-          text = text + '\n';
-          break;
-        case VirtualKeyboardKeyAction.Space:
-          text = text + key.text;
-          break;
-        case VirtualKeyboardKeyAction.Shift:
-          shiftEnabled = !shiftEnabled;
-          break;
-        default:
-      }
-    }
-    // Update the screen
-    setState(() {});
   }
 }
