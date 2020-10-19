@@ -6,6 +6,8 @@ const double _virtualKeyboardDefaultHeight = 300;
 
 const int _virtualKeyboardBackspaceEventPerioud = 250;
 
+const int _virtualKeyboardSlideDuration = 125;
+
 /// Virtual Keyboard widget.
 class VirtualKeyboard extends StatefulWidget {
   /// Keyboard Type: Should be inited in creation time.
@@ -61,6 +63,7 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
   Color backgroundColor;
   double fontSize;
   bool alwaysCaps;
+  bool visible = false;
   // Text Style for keys.
   TextStyle textStyle;
 
@@ -106,33 +109,30 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
     );
   }
 
+  void show() {
+    setState(() => visible = true);
+  }
+
+  void hide() {
+    setState(() => visible = false);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return type == VirtualKeyboardType.Numeric ? _numeric() : _alphanumeric();
-  }
-
-  Widget _alphanumeric() {
-    return Container(
-      height: height,
-      color: backgroundColor,
+    return AnimatedContainer(
       width: MediaQuery.of(context).size.width,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: _rows(),
-      ),
-    );
-  }
-
-  Widget _numeric() {
-    return Container(
-      height: height,
+      height: visible ? height : 0,
+      curve: Curves.easeInOutCubic,
+      duration: Duration(milliseconds: _virtualKeyboardSlideDuration),
       color: backgroundColor,
-      width: MediaQuery.of(context).size.width,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: _rows(),
+      child: OverflowBox(
+        minHeight: height,
+        maxHeight: height,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: _rows(),
+        ),
       ),
     );
   }
