@@ -1,11 +1,16 @@
 library virtual_keyboard;
 
 import 'dart:async';
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 part './src/key_action.dart';
 part './src/key_type.dart';
 part './src/key.dart';
 part './src/keyboard.dart';
+part './src/messenger.dart';
 part './src/rows.dart';
+part './src/model.dart';
 part './src/type.dart';

@@ -62,6 +62,24 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
   // True if shift is enabled.
   bool isShiftEnabled = false;
 
+  // Client ID provided by Flutter to report events with.
+  int clientId = -1;
+
+  // Input action to perform when enter pressed.
+  String inputAction;
+
+  // The type of input.
+  String inputType;
+
+  // Handles underlying text input state, using a simple ASCII model.
+  final model = VirtualKeyboardModel();
+
+  // Filters text input channel messages
+  final messenger = VirtualKeyboardMessenger();
+
+  // Codec for encoding and decoding text input methods
+  final codec = JSONMethodCodec();
+
   @override
   void didUpdateWidget(Widget oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -97,11 +115,146 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
       fontSize: fontSize,
       color: textColor,
     );
+
+    window.onPlatformMessage = messenger.handlePlatformMessage;
+    TextInput.setChannel(MethodChannel('virtual_keyboard', codec, messenger));
+    messenger.setMessageFilter('virtual_keyboard', (ByteData message) {
+      _handleMethodCall(codec.decodeMethodCall(message));
+      return Future.value(codec.encodeSuccessEnvelope(null));
+    });
+  }
+
+  @override
+  void dispose() {
+    window.onPlatformMessage =
+        ServicesBinding.instance.defaultBinaryMessenger.handlePlatformMessage;
+    TextInput.setChannel(SystemChannels.textInput);
+    messenger.setMessageFilter('virtual_keyboard', null);
+    super.dispose();
+  }
+
+  void _setClient(int id, Map<String, dynamic> config) {
+    clientId = id;
+    inputAction = config['inputAction'].toString();
+    inputType = config['inputType']['name'].toString();
+  }
+
+  void _show() {
+    print('### TODO: show');
+  }
+
+  // Updates the editing state from Flutter.
+  void _setEditingState(Map<String, dynamic> state) {
+    String text = state['text'].toString();
+    int selectionBase = state['selectionBase'] as int;
+    int selectionExtent = state['selectionExtent'] as int;
+    // Flutter uses -1/-1 for invalid; translate that to 0/0 for the model.
+    if (selectionBase == -1 && selectionExtent == -1) {
+      selectionBase = selectionExtent = 0;
+    }
+
+    model.text = text;
+    model.selection =
+        TextSelection(baseOffset: selectionBase, extentOffset: selectionExtent);
+  }
+
+  void _clearClient() {
+    clientId = -1;
+  }
+
+  void _hide() {
+    print('### TODO: hide');
+  }
+
+  void _handleMethodCall(MethodCall call) {
+    switch (call.method) {
+      case 'TextInput.setClient':
+        _setClient(call.arguments[0], call.arguments[1]);
+        break;
+      case 'TextInput.show':
+        _show();
+        break;
+      case 'TextInput.setEditingState':
+        _setEditingState(call.arguments);
+        break;
+      case 'TextInput.clearClient':
+        _clearClient();
+        break;
+      case 'TextInput.hide':
+        _hide();
+        break;
+      case 'TextInput.setEditableSizeAndTransform':
+      case 'TextInput.setMarkedTextRect':
+      case 'TextInput.setStyle':
+        break;
+      default:
+        throw UnimplementedError(call.method);
+        break;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return type == VirtualKeyboardType.Numeric ? _numeric() : _alphanumeric();
+  }
+
+  void _handleKeyPress(VirtualKeyboardKey key) {
+    var changed = false;
+    var action = false;
+    switch (key.keyType) {
+      case VirtualKeyboardKeyType.String:
+        changed = model.addText(isShiftEnabled ? key.capsText : key.text);
+        break;
+      case VirtualKeyboardKeyType.Action:
+        switch (key.action) {
+          case VirtualKeyboardKeyAction.Backspace:
+            changed = model.backspace();
+            break;
+          case VirtualKeyboardKeyAction.Return:
+            if (inputType.contains('multiline')) {
+              changed = model.addText('\n');
+            }
+            action = true;
+            break;
+          case VirtualKeyboardKeyAction.Space:
+            changed = model.addText(' ');
+            break;
+          default:
+            break;
+        }
+        break;
+    }
+    if (changed) {
+      _updateEditingState();
+    }
+    if (action) {
+      _performAction();
+    }
+    onKeyPress?.call(key);
+  }
+
+  void _updateEditingState() {
+    final state = <String, dynamic>{};
+    state['text'] = model.text;
+    state['selectionBase'] = model.selection.baseOffset;
+    state['selectionExtent'] = model.selection.extentOffset;
+
+    // The following keys are not implemented and set to default values.
+    state['selectionAffinity'] = 'TextAffinity.downstream';
+    state['selectionIsDirectional'] = false;
+    state['composingBase'] = -1;
+    state['composingExtent'] = -1;
+
+    _platformCall('TextInputClient.updateEditingState', [clientId, state]);
+  }
+
+  void _performAction() {
+    _platformCall('TextInputClient.performAction', [clientId, inputAction]);
+  }
+
+  void _platformCall(String method, dynamic args) {
+    final call = codec.encodeMethodCall(MethodCall(method, args));
+    window.onPlatformMessage('virtual_keyboard', call, (data) {});
   }
 
   Widget _alphanumeric() {
@@ -195,7 +348,7 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
     return Expanded(
         child: InkWell(
       onTap: () {
-        onKeyPress(key);
+        _handleKeyPress(key);
       },
       child: Container(
         height: height / _keyRows.length,
@@ -271,7 +424,7 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
             }
           }
 
-          onKeyPress(key);
+          _handleKeyPress(key);
         },
         child: Container(
           alignment: Alignment.center,
