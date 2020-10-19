@@ -25,11 +25,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  // Holds the text that user typed.
-  TextEditingController controller = TextEditingController(text: '...');
-
-  // is true will show the numeric keyboard.
-  bool isNumericMode = true;
+  final _controllers = <TextInputType, TextEditingController>{};
 
   @override
   Widget build(BuildContext context) {
@@ -37,41 +33,33 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         title: Text(widget.title),
       ),
-      body: Center(
-        child: Column(
-          children: <Widget>[
-            TextField(
-              controller: controller,
-            ),
-            SwitchListTile(
-              title: Text(
-                'Keyboard Type = ' +
-                    (isNumericMode
-                        ? 'VirtualKeyboardType.Numeric'
-                        : 'VirtualKeyboardType.Alphanumeric'),
+      body: Column(
+        children: [
+          Expanded(
+            child: Scrollbar(
+              child: ListView(
+                children: <Widget>[
+                  for (final type in TextInputType.values)
+                    TextField(
+                      keyboardType: type,
+                      controller: _controllers[type] ??=
+                          TextEditingController(),
+                      decoration: InputDecoration(
+                        labelText: type.toJson()['name'].toString(),
+                      ),
+                    ),
+                ],
               ),
-              value: isNumericMode,
-              onChanged: (val) {
-                setState(() {
-                  isNumericMode = val;
-                });
-              },
             ),
-            Expanded(
-              child: Container(),
+          ),
+          Container(
+            color: Colors.deepPurple,
+            child: VirtualKeyboard(
+              height: 300,
+              textColor: Colors.white,
             ),
-            Container(
-              color: Colors.deepPurple,
-              child: VirtualKeyboard(
-                height: 300,
-                textColor: Colors.white,
-                type: isNumericMode
-                    ? VirtualKeyboardType.Numeric
-                    : VirtualKeyboardType.Alphanumeric,
-              ),
-            )
-          ],
-        ),
+          )
+        ],
       ),
     );
   }
