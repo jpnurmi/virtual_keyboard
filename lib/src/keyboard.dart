@@ -20,6 +20,9 @@ class VirtualKeyboard extends StatefulWidget {
   /// Color for key texts and icons.
   final Color textColor;
 
+  /// Color for the background.
+  final Color backgroundColor;
+
   /// Font size for keyboard keys.
   final double fontSize;
 
@@ -36,6 +39,7 @@ class VirtualKeyboard extends StatefulWidget {
       this.builder,
       this.height = _virtualKeyboardDefaultHeight,
       this.textColor = Colors.black,
+      this.backgroundColor = Colors.grey,
       this.fontSize = 14,
       this.alwaysCaps = false})
       : super(key: key);
@@ -54,6 +58,7 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
   Widget Function(BuildContext context, VirtualKeyboardKey key) builder;
   double height;
   Color textColor;
+  Color backgroundColor;
   double fontSize;
   bool alwaysCaps;
   // Text Style for keys.
@@ -70,6 +75,7 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
       onKeyPress = widget.onKeyPress;
       height = widget.height;
       textColor = widget.textColor;
+      backgroundColor = widget.backgroundColor;
       fontSize = widget.fontSize;
       alwaysCaps = widget.alwaysCaps;
 
@@ -88,6 +94,7 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
     type = widget.type;
     onKeyPress = widget.onKeyPress;
     height = widget.height;
+    backgroundColor = widget.backgroundColor;
     textColor = widget.textColor;
     fontSize = widget.fontSize;
     alwaysCaps = widget.alwaysCaps;
@@ -107,6 +114,7 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
   Widget _alphanumeric() {
     return Container(
       height: height,
+      color: backgroundColor,
       width: MediaQuery.of(context).size.width,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -119,6 +127,7 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
   Widget _numeric() {
     return Container(
       height: height,
+      color: backgroundColor,
       width: MediaQuery.of(context).size.width,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
