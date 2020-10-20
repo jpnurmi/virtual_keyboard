@@ -36,8 +36,8 @@ class VirtualKeyboard extends StatefulWidget {
 
   VirtualKeyboard(
       {Key key,
-      @required this.type,
-      @required this.onKeyPress,
+      this.type,
+      this.onKeyPress,
       this.builder,
       this.height = _virtualKeyboardDefaultHeight,
       this.textColor = Colors.black,
@@ -145,8 +145,10 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
 
   void _setClient(int id, Map<String, dynamic> config) {
     clientId = id;
-    inputAction = config['inputAction'].toString();
-    inputType = config['inputType']['name'].toString();
+    setState(() {
+      inputAction = config['inputAction'].toString();
+      inputType = config['inputType']['name'].toString();
+    });
   }
 
   void _show() {
@@ -282,13 +284,18 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
     window.onPlatformMessage('virtual_keyboard', call, (data) {});
   }
 
+  bool get _isNumeric {
+    return type == VirtualKeyboardType.Numeric ||
+        (type == null &&
+            (inputType?.contains('number') == true ||
+                inputType?.contains('phone') == true));
+  }
+
   /// Returns the rows for keyboard.
   List<Widget> _rows() {
     // Get the keyboard Rows
     List<List<VirtualKeyboardKey>> keyboardRows =
-        type == VirtualKeyboardType.Numeric
-            ? _getKeyboardRowsNumeric()
-            : _getKeyboardRows();
+        _isNumeric ? _getKeyboardRowsNumeric() : _getKeyboardRows();
 
     // Generate keyboard row.
     List<Widget> rows = List.generate(keyboardRows.length, (int rowNum) {
