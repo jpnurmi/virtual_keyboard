@@ -52,13 +52,11 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
             ),
           ),
-          Container(
-            color: Colors.deepPurple,
-            child: VirtualKeyboard(
-              height: 300,
-              textColor: Colors.white,
-            ),
-          )
+          VirtualKeyboard(
+            height: 300,
+            textColor: Colors.white,
+            backgroundColor: Colors.deepPurple,
+          ),
         ],
       ),
     );
