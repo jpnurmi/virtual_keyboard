@@ -6,6 +6,8 @@ const double _virtualKeyboardDefaultHeight = 300;
 
 const int _virtualKeyboardBackspaceEventPerioud = 250;
 
+const int _virtualKeyboardSlideDuration = 125;
+
 /// Virtual Keyboard widget.
 class VirtualKeyboard extends StatefulWidget {
   /// Keyboard Type: Should be inited in creation time.
@@ -61,6 +63,7 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
   Color backgroundColor;
   double fontSize;
   bool alwaysCaps;
+  bool visible = false;
   // Text Style for keys.
   TextStyle textStyle;
 
@@ -147,7 +150,7 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
   }
 
   void _show() {
-    print('### TODO: show');
+    setState(() => visible = true);
   }
 
   // Updates the editing state from Flutter.
@@ -170,7 +173,7 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
   }
 
   void _hide() {
-    print('### TODO: hide');
+    setState(() => visible = false);
   }
 
   void _handleMethodCall(MethodCall call) {
@@ -202,7 +205,22 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
 
   @override
   Widget build(BuildContext context) {
-    return type == VirtualKeyboardType.Numeric ? _numeric() : _alphanumeric();
+    return AnimatedContainer(
+      width: MediaQuery.of(context).size.width,
+      height: visible ? height : 0,
+      curve: Curves.easeInOutCubic,
+      duration: Duration(milliseconds: _virtualKeyboardSlideDuration),
+      color: backgroundColor,
+      child: OverflowBox(
+        minHeight: height,
+        maxHeight: height,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: _rows(),
+        ),
+      ),
+    );
   }
 
   void _handleKeyPress(VirtualKeyboardKey key) {
@@ -262,32 +280,6 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
   void _platformCall(String method, dynamic args) {
     final call = codec.encodeMethodCall(MethodCall(method, args));
     window.onPlatformMessage('virtual_keyboard', call, (data) {});
-  }
-
-  Widget _alphanumeric() {
-    return Container(
-      height: height,
-      color: backgroundColor,
-      width: MediaQuery.of(context).size.width,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: _rows(),
-      ),
-    );
-  }
-
-  Widget _numeric() {
-    return Container(
-      height: height,
-      color: backgroundColor,
-      width: MediaQuery.of(context).size.width,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: _rows(),
-      ),
-    );
   }
 
   /// Returns the rows for keyboard.
