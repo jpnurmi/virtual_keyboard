@@ -347,6 +347,7 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
   Widget _keyboardDefaultKey(VirtualKeyboardKey key) {
     return Expanded(
         child: InkWell(
+      canRequestFocus: false,
       onTap: () {
         _handleKeyPress(key);
       },
@@ -415,6 +416,7 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
 
     return Expanded(
       child: InkWell(
+        canRequestFocus: false,
         onTap: () {
           if (key.action == VirtualKeyboardKeyAction.Shift) {
             if (!alwaysCaps) {
