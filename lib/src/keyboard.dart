@@ -119,21 +119,24 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      width: MediaQuery.of(context).size.width,
-      height: visible ? height : 0,
-      curve: Curves.easeInOutCubic,
-      duration: Duration(milliseconds: _virtualKeyboardSlideDuration),
-      color: backgroundColor,
-      child: OverflowBox(
-        minHeight: height,
-        maxHeight: height,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: _rows(),
+    return SwipeGestureRecognizer(
+      child: AnimatedContainer(
+        width: MediaQuery.of(context).size.width,
+        height: visible ? height : 0,
+        curve: Curves.easeInOutCubic,
+        duration: Duration(milliseconds: _virtualKeyboardSlideDuration),
+        color: backgroundColor,
+        child: OverflowBox(
+          minHeight: height,
+          maxHeight: height,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: _rows(),
+          ),
         ),
       ),
+      onSwipeDown: _hide,
     );
   }
 
