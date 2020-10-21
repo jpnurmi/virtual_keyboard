@@ -5,6 +5,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:swipe_gesture_recognizer/swipe_gesture_recognizer.dart';
 
 part './src/key_action.dart';
 part './src/key_type.dart';
