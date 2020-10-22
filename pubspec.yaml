@@ -5,7 +5,7 @@ author: Gurgen Hovhannisyan <g.hovhannisyan@digitalpomegranate.com>
 homepage: https://github.com/gurgenDP/virtual_keyboard
 
 environment:
-  sdk: ">=2.1.0 <3.0.0"
+  sdk: ">=2.6.0 <3.0.0"
 
 dependencies:
   flutter:
@@ -20,6 +20,11 @@ dev_dependencies:
 
 # The following section is specific to Flutter.
 flutter:
+
+  # The following line ensures that the Material Icons font is
+  # included with your application, so that you can use the icons in
+  # the material Icons class.
+  uses-material-design: true
 
   # To add assets to your package, add an assets section, like this:
   # assets:
