@@ -52,6 +52,67 @@ class VirtualKeyboard extends StatefulWidget {
   }
 }
 
+class _VirtualKeyboardConnection extends TextInputConnection {
+  final _VirtualKeyboardState vkb;
+  _VirtualKeyboardConnection(TextInputClient client, this.vkb) : super(client);
+
+  @override
+  void show() {
+    vkb.show();
+  }
+
+  @override
+  void hide() {
+    vkb.hide();
+  }
+
+  @override
+  void setEditingState(TextEditingValue value) {
+    vkb.setEditingState(value);
+  }
+
+  @override
+  void setClient(TextInputConfiguration configuration) {
+    vkb.setInputConfiguration(configuration);
+  }
+
+  @override
+  void updateConfig(TextInputConfiguration configuration) {
+    vkb.setInputConfiguration(configuration);
+  }
+
+  @override
+  void clearClient() {
+    vkb.setInputConfiguration(null);
+  }
+
+  @override
+  void requestAutofill() {
+    // TODO: implement requestAutofill
+  }
+
+  @override
+  void setComposingRect(Rect rect) {
+    // TODO: implement setComposingRect
+  }
+
+  @override
+  void setEditableSizeAndTransform(Size editableBoxSize, Matrix4 transform) {
+    // TODO: implement setEditableSizeAndTransform
+  }
+
+  @override
+  void setStyle({
+    String fontFamily,
+    double fontSize,
+    FontWeight fontWeight,
+    TextDirection textDirection,
+    TextAlign textAlign,
+  }) {
+    // TODO: implement setStyle
+  }
+}
+
 /// Holds the state for Virtual Keyboard class.
 class _VirtualKeyboardState extends State<VirtualKeyboard> {
   VirtualKeyboardType type;
@@ -70,14 +131,8 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
   // True if shift is enabled.
   bool isShiftEnabled = false;
 
-  // Client ID provided by Flutter to report events with.
-  int clientId = -1;
-
-  // Input action to perform when enter pressed.
-  String inputAction;
-
-  // The type of input.
-  String inputType;
+  TextInputClient inputClient;
+  TextInputConfiguration inputConfiguration;
 
   // Handles underlying text input state, using a simple ASCII model.
   final model = VirtualKeyboardModel();
@@ -126,40 +181,42 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
       color: textColor,
     );
 
-    window.onPlatformMessage = messenger.handlePlatformMessage;
-    TextInput.setChannel(MethodChannel('virtual_keyboard', codec, messenger));
-    messenger.setMessageFilter('virtual_keyboard', (ByteData message) {
-      _handleMethodCall(codec.decodeMethodCall(message));
-      return Future.value(codec.encodeSuccessEnvelope(null));
+    TextInput.registerConnectionFactory((client) {
+      inputClient = client;
+      return _VirtualKeyboardConnection(client, this);
     });
   }
 
   @override
   void dispose() {
-    window.onPlatformMessage =
-        ServicesBinding.instance.defaultBinaryMessenger.handlePlatformMessage;
-    TextInput.setChannel(SystemChannels.textInput);
-    messenger.setMessageFilter('virtual_keyboard', null);
+    TextInput.registerConnectionFactory(null);
     super.dispose();
   }
 
-  void _setClient(int id, Map<String, dynamic> config) {
-    clientId = id;
-    setState(() {
-      inputAction = config['inputAction'].toString();
-      inputType = config['inputType']['name'].toString();
-    });
+  @override
+  TextInputConnection attach(
+      TextInputClient client, TextInputConfiguration configuration) {
+    inputClient = client;
+    inputConfiguration = configuration;
+    return _VirtualKeyboardConnection(client, this);
   }
 
-  void _show() {
+  void show() {
     setState(() => visible = true);
   }
 
-  // Updates the editing state from Flutter.
-  void _setEditingState(Map<String, dynamic> state) {
-    String text = state['text'].toString();
-    int selectionBase = state['selectionBase'] as int;
-    int selectionExtent = state['selectionExtent'] as int;
+  void hide() {
+    setState(() => visible = false);
+  }
+
+  void setInputConfiguration(TextInputConfiguration configuration) {
+    setState(() => inputConfiguration = configuration);
+  }
+
+  void setEditingState(TextEditingValue value) {
+    String text = value.text;
+    int selectionBase = value.selection.baseOffset;
+    int selectionExtent = value.selection.extentOffset;
     // Flutter uses -1/-1 for invalid; translate that to 0/0 for the model.
     if (selectionBase == -1 && selectionExtent == -1) {
       selectionBase = selectionExtent = 0;
@@ -168,41 +225,6 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
     model.text = text;
     model.selection =
         TextSelection(baseOffset: selectionBase, extentOffset: selectionExtent);
-  }
-
-  void _clearClient() {
-    clientId = -1;
-  }
-
-  void _hide() {
-    setState(() => visible = false);
-  }
-
-  void _handleMethodCall(MethodCall call) {
-    switch (call.method) {
-      case 'TextInput.setClient':
-        _setClient(call.arguments[0], call.arguments[1]);
-        break;
-      case 'TextInput.show':
-        _show();
-        break;
-      case 'TextInput.setEditingState':
-        _setEditingState(call.arguments);
-        break;
-      case 'TextInput.clearClient':
-        _clearClient();
-        break;
-      case 'TextInput.hide':
-        _hide();
-        break;
-      case 'TextInput.setEditableSizeAndTransform':
-      case 'TextInput.setMarkedTextRect':
-      case 'TextInput.setStyle':
-        break;
-      default:
-        throw UnimplementedError(call.method);
-        break;
-    }
   }
 
   @override
@@ -224,7 +246,7 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
           ),
         ),
       ),
-      onSwipeDown: _hide,
+      onSwipeDown: hide,
     );
   }
 
@@ -241,7 +263,7 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
             changed = model.backspace();
             break;
           case VirtualKeyboardKeyAction.Return:
-            if (inputType.contains('multiline')) {
+            if (inputConfiguration.inputType == TextInputType.multiline) {
               changed = model.addText('\n');
             }
             action = true;
@@ -264,34 +286,21 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
   }
 
   void _updateEditingState() {
-    final state = <String, dynamic>{};
-    state['text'] = model.text;
-    state['selectionBase'] = model.selection.baseOffset;
-    state['selectionExtent'] = model.selection.extentOffset;
-
-    // The following keys are not implemented and set to default values.
-    state['selectionAffinity'] = 'TextAffinity.downstream';
-    state['selectionIsDirectional'] = false;
-    state['composingBase'] = -1;
-    state['composingExtent'] = -1;
-
-    _platformCall('TextInputClient.updateEditingState', [clientId, state]);
+    final value =
+        TextEditingValue(text: model.text, selection: model.selection);
+    inputClient.updateEditingValue(value);
   }
 
   void _performAction() {
-    _platformCall('TextInputClient.performAction', [clientId, inputAction]);
-  }
-
-  void _platformCall(String method, dynamic args) {
-    final call = codec.encodeMethodCall(MethodCall(method, args));
-    window.onPlatformMessage('virtual_keyboard', call, (data) {});
+    inputClient.performAction(inputConfiguration.inputAction);
   }
 
   bool get _isNumeric {
     return type == VirtualKeyboardType.Numeric ||
         (type == null &&
-            (inputType?.contains('number') == true ||
-                inputType?.contains('phone') == true));
+            inputConfiguration != null &&
+            (inputConfiguration.inputType == TextInputType.number ||
+                inputConfiguration.inputType == TextInputType.phone));
   }
 
   /// Returns the rows for keyboard.
