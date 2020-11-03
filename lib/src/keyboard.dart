@@ -62,6 +62,12 @@ class _VirtualKeyboardConnection extends TextInputConnection {
   }
 
   @override
+  void onAttach() {}
+
+  @override
+  void onDetach() {}
+
+  @override
   void hide() {
     vkb.hide();
   }
