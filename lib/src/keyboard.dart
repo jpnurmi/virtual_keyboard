@@ -34,6 +34,9 @@ class VirtualKeyboard extends StatefulWidget {
   /// Set to true if you want only to show Caps letters.
   final bool alwaysCaps;
 
+  /// Whether the keyboard is active
+  final bool active;
+
   VirtualKeyboard(
       {Key key,
       this.type,
@@ -43,7 +46,8 @@ class VirtualKeyboard extends StatefulWidget {
       this.textColor = Colors.black,
       this.backgroundColor = Colors.grey,
       this.fontSize = 14,
-      this.alwaysCaps = false})
+      this.alwaysCaps = false,
+      this.active = true})
       : super(key: key);
 
   @override
@@ -161,6 +165,7 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
         color: textColor,
       );
     });
+    register();
   }
 
   @override
@@ -181,10 +186,7 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
       color: textColor,
     );
 
-    TextInput.registerConnectionFactory((client) {
-      inputClient = client;
-      return _VirtualKeyboardConnection(client, this);
-    });
+    register();
   }
 
   @override
@@ -193,12 +195,19 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
     super.dispose();
   }
 
-  @override
-  TextInputConnection attach(
-      TextInputClient client, TextInputConfiguration configuration) {
-    inputClient = client;
-    inputConfiguration = configuration;
-    return _VirtualKeyboardConnection(client, this);
+  void register() {
+    if (widget.active) {
+      TextInput.registerConnectionFactory((client) {
+        inputClient = client;
+        return _VirtualKeyboardConnection(client, this);
+      });
+    } else {
+      TextInput.registerConnectionFactory(null);
+      if (mounted) {
+        hide();
+        FocusManager.instance.primaryFocus?.unfocus();
+      }
+    }
   }
 
   void show() {

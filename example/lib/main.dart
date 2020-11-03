@@ -26,12 +26,19 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   final _controllers = <TextInputType, TextEditingController>{};
+  var _active = true;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
+        actions: [
+          Switch(
+            value: _active,
+            onChanged: (value) => setState(() => _active = value),
+          )
+        ],
       ),
       body: Column(
         children: [
@@ -54,6 +61,7 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
           VirtualKeyboard(
             height: 300,
+            active: _active,
             textColor: Colors.white,
             backgroundColor: Colors.deepPurple,
           ),
