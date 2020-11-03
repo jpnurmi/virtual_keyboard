@@ -137,12 +137,6 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
   // Handles underlying text input state, using a simple ASCII model.
   final model = VirtualKeyboardModel();
 
-  // Filters text input channel messages
-  final messenger = VirtualKeyboardMessenger();
-
-  // Codec for encoding and decoding text input methods
-  final codec = JSONMethodCodec();
-
   @override
   void didUpdateWidget(Widget oldWidget) {
     super.didUpdateWidget(oldWidget);
