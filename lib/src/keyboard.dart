@@ -136,10 +136,6 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
       });
     } else {
       TextInput.registerConnectionFactory(null);
-      if (mounted) {
-        hide();
-        FocusManager.instance.primaryFocus?.unfocus();
-      }
     }
   }
 
