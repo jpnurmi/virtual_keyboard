@@ -57,7 +57,8 @@ class VirtualKeyboard extends StatefulWidget {
 }
 
 /// Holds the state for Virtual Keyboard class.
-class _VirtualKeyboardState extends State<VirtualKeyboard> {
+class _VirtualKeyboardState extends State<VirtualKeyboard>
+    implements TextInputSource {
   VirtualKeyboardType type;
   Function onKeyPress;
   // The builder function will be called for each Key object.
@@ -124,19 +125,27 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
 
   @override
   void dispose() {
-    TextInput.registerConnectionFactory(null);
+    TextInput.setSource(TextInput.defaultSource);
     super.dispose();
   }
 
   void register() {
     if (widget.active) {
-      TextInput.registerConnectionFactory((client) {
-        inputClient = client;
-        return _VirtualKeyboardConnection(client, this);
-      });
+      TextInput.setSource(this);
     } else {
-      TextInput.registerConnectionFactory(null);
+      TextInput.setSource(TextInput.defaultSource);
     }
+  }
+
+  @override
+  TextInputConnection attach(TextInputClient client) {
+    inputClient = client;
+    return _VirtualKeyboardConnection(client, this);
+  }
+
+  @override
+  void detach(TextInputClient client) {
+    inputClient = null;
   }
 
   void show() {
@@ -394,4 +403,13 @@ class _VirtualKeyboardState extends State<VirtualKeyboard> {
       ),
     );
   }
+
+  @override
+  void cleanup() {}
+
+  @override
+  void finishAutofillContext({bool shouldSave = true}) {}
+
+  @override
+  void init() {}
 }
